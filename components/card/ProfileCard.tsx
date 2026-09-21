@@ -258,7 +258,7 @@ export default function ProfileCard({
         {showQr && (
           <div className="mt-2 flex flex-col items-center gap-2 self-center">
             <div className="rounded-xl bg-white p-3">
-              <QRCode url={cardUrl} size={120} fgColor={colors.text} />
+              <QRCode url={cardUrl} size={120} fgColor={"#1B211F"} />
             </div>
             <p className="text-xs opacity-60">{cardUrl.replace(/^https?:\/\//, "")}</p>
           </div>
