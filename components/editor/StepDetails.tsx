@@ -5,6 +5,7 @@ import { Upload, X } from "lucide-react";
 import { Profile, LinkType } from "@/lib/types";
 import { newId } from "@/lib/utils";
 import Field, { inputClass } from "./Field";
+import LinksManager from "./LinksManager";
 
 const QUICK_LINK_TYPES: { type: LinkType; label: string; placeholder: string }[] = [
   { type: "github", label: "GitHub", placeholder: "https://github.com/you" },
@@ -199,9 +200,16 @@ export default function StepDetails({
           ))}
         </div>
         <p className="text-xs text-ink-soft">
-          You can add more link types (Instagram, YouTube, WhatsApp, and custom links) from your
-          dashboard after publishing.
+          These three show up first. Add Instagram, YouTube, WhatsApp, or your own custom link
+          below.
         </p>
+        <LinksManager
+          links={profile.links.filter((l) => !QUICK_LINK_TYPES.some((q) => q.type === l.type))}
+          onChange={(extra) => {
+            const quick = profile.links.filter((l) => QUICK_LINK_TYPES.some((q) => q.type === l.type));
+            onChange({ links: [...quick, ...extra] });
+          }}
+        />
       </section>
     </div>
   );
