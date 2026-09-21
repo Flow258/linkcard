@@ -6,8 +6,8 @@ import { TEMPLATES } from "@/lib/templates";
 
 const DEMO_PROFILE: Profile = {
   ...EMPTY_PROFILE,
-  username: "dave",
-  displayName: "Jong doe",
+  username: "jong",
+  displayName: "jong doe",
   jobTitle: "Software Developer",
   bio: "Building software and web applications.",
   location: "Cebu City, PH",

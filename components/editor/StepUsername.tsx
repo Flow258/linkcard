@@ -74,7 +74,7 @@ export default function StepUsername({
           onChange={(e) =>
             onChange({ username: e.target.value.toLowerCase().replace(/\s+/g, "-") })
           }
-          placeholder="dave"
+          placeholder="jong"
           autoComplete="off"
           spellCheck={false}
         />

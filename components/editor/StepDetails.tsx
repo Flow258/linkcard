@@ -90,7 +90,7 @@ export default function StepDetails({
             className={inputClass}
             value={profile.displayName}
             onChange={(e) => onChange({ displayName: e.target.value })}
-            placeholder="Dave Alquizalas"
+            placeholder="Jong Doe"
           />
         </Field>
         <Field label="Job title">
