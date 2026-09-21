@@ -231,7 +231,7 @@ export default {
     if (request.method === "OPTIONS") return noContent(204);
 
     const url = new URL(request.url);
-    const parts = url.pathname.split("/").filter(Boolean); // e.g. ["api","profile","dave"]
+    const parts = url.pathname.split("/").filter(Boolean); // e.g. ["api","profile","jong"]
 
     try {
       if (parts[0] === "api" && parts[1] === "username-available" && parts[2]) {
