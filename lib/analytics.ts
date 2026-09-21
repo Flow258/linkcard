@@ -26,15 +26,16 @@ export function trackEvent(username: string, type: AnalyticsEventType) {
   const body = JSON.stringify({ username, type });
   try {
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
-    } else {
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        keepalive: true,
-      }).catch(() => {});
+      const sent = navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
+      if (sent) return;
     }
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
   } catch {
     /* analytics failures are never surfaced to the visitor */
   }
