@@ -1,4 +1,4 @@
-const STEPS = ["Details", "Template", "Customize", "Username", "Publish"];
+const STEPS = ["Details", "Extras", "Template", "Customize", "Username", "Publish"];
 
 export default function Stepper({ current }: { current: number }) {
   return (

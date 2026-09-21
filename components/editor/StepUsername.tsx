@@ -4,23 +4,30 @@ import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { Profile } from "@/lib/types";
 import { usernameFormatError, suggestUsernames } from "@/lib/username";
-import { isUsernameTaken } from "@/lib/storage";
+import { isUsernameTaken } from "@/lib/data";
 import { inputClass } from "./Field";
 
 export default function StepUsername({
   profile,
   originalUsername,
   onChange,
+  onValidityChange,
 }: {
   profile: Profile;
   originalUsername?: string;
   onChange: (patch: Partial<Profile>) => void;
+  onValidityChange?: (valid: boolean) => void;
 }) {
   const [status, setStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">(
     "idle"
   );
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onValidityChange?.(status === "available");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   useEffect(() => {
     const value = profile.username.trim();
@@ -36,16 +43,22 @@ export default function StepUsername({
     }
     setError(null);
     setStatus("checking");
+    let cancelled = false;
     const timeout = setTimeout(() => {
-      const taken = isUsernameTaken(value, originalUsername);
-      if (taken) {
-        setStatus("taken");
-        setSuggestions(suggestUsernames(value));
-      } else {
-        setStatus("available");
-      }
+      isUsernameTaken(value, originalUsername).then((taken) => {
+        if (cancelled) return;
+        if (taken) {
+          setStatus("taken");
+          setSuggestions(suggestUsernames(value));
+        } else {
+          setStatus("available");
+        }
+      });
     }, 250);
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [profile.username, originalUsername]);
 
   return (
