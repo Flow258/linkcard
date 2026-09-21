@@ -2,31 +2,49 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, ExternalLink, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, ExternalLink, Pencil, Trash2, Eye, EyeOff, BarChart3 } from "lucide-react";
 import { Profile } from "@/lib/types";
-import { listProfiles, deleteProfile, saveProfile } from "@/lib/storage";
+import { listProfiles, deleteProfile, saveProfile, usingApiBackend } from "@/lib/data";
 import { getCardUrl } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyUsername, setBusyUsername] = useState<string | null>(null);
 
-  function refresh() {
-    setProfiles(listProfiles());
+  async function refresh() {
+    setLoading(true);
+    try {
+      setProfiles(await listProfiles());
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleDelete(username: string) {
+  async function handleDelete(username: string) {
     if (!window.confirm(`Delete the card @${username}? This can't be undone.`)) return;
-    deleteProfile(username);
-    refresh();
+    setBusyUsername(username);
+    try {
+      await deleteProfile(username);
+      await refresh();
+    } finally {
+      setBusyUsername(null);
+    }
   }
 
-  function togglePublic(profile: Profile) {
-    saveProfile({ ...profile, isPublic: !profile.isPublic });
-    refresh();
+  async function togglePublic(profile: Profile) {
+    setBusyUsername(profile.username);
+    try {
+      await saveProfile({ ...profile, isPublic: !profile.isPublic });
+      await refresh();
+    } finally {
+      setBusyUsername(null);
+    }
   }
 
   return (
@@ -48,10 +66,17 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-5xl px-6 py-12">
         <h1 className="font-display text-2xl text-ink">Your cards</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Saved on this device. {profiles.length} of unlimited on the free plan.
+          {usingApiBackend
+            ? "Synced to your LinkCard API — viewable from any device."
+            : "Saved on this device only."}{" "}
+          {profiles.length} of unlimited on the free plan.
         </p>
 
-        {profiles.length === 0 ? (
+        {loading ? (
+          <div className="mt-10 flex items-center justify-center py-20 text-sm text-ink-soft">
+            Loading your cards…
+          </div>
+        ) : profiles.length === 0 ? (
           <div className="mt-10 flex flex-col items-center gap-4 rounded-card border border-dashed border-black/15 py-20 text-center">
             <p className="text-ink-soft">You haven&apos;t created a card yet.</p>
             <Link
@@ -91,7 +116,8 @@ export default function DashboardPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => togglePublic(p)}
-                    className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
+                    disabled={busyUsername === p.username}
+                    className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-ink hover:bg-black/5 disabled:opacity-50"
                     title={p.isPublic ? "Unpublish" : "Publish"}
                   >
                     {p.isPublic ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -110,9 +136,16 @@ export default function DashboardPage() {
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> View
                   </Link>
+                  <Link
+                    href={`/analytics/${p.username}`}
+                    className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" /> Analytics
+                  </Link>
                   <button
                     onClick={() => handleDelete(p.username)}
-                    className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-seal hover:bg-seal/5"
+                    disabled={busyUsername === p.username}
+                    className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-seal hover:bg-seal/5 disabled:opacity-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Delete
                   </button>

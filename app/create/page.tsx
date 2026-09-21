@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { EMPTY_PROFILE, Profile } from "@/lib/types";
-import { getProfile, saveProfile, isUsernameTaken } from "@/lib/storage";
+import { getProfile, saveProfile, isUsernameTaken } from "@/lib/data";
 import { usernameFormatError } from "@/lib/username";
 import Stepper from "@/components/editor/Stepper";
 import StepDetails from "@/components/editor/StepDetails";
+import StepExtras from "@/components/editor/StepExtras";
 import StepTemplate from "@/components/editor/StepTemplate";
 import StepCustomize from "@/components/editor/StepCustomize";
 import StepUsername from "@/components/editor/StepUsername";
@@ -15,66 +16,89 @@ import StepPublish from "@/components/editor/StepPublish";
 import ProfileCard from "@/components/card/ProfileCard";
 
 const DRAFT_KEY = "linkcard.draft.v1";
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
+const USERNAME_STEP = 5;
+const PUBLISH_STEP = 6;
 
 export default function CreatePage() {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
   const [originalUsername, setOriginalUsername] = useState<string | undefined>(undefined);
   const [published, setPublished] = useState(false);
+  const [usernameValid, setUsernameValid] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   // Load either an existing card to edit (?edit=username) or the saved draft.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const editUsername = params.get("edit");
-    if (editUsername) {
-      const existing = getProfile(editUsername);
-      if (existing) {
-        setProfile(existing);
-        setOriginalUsername(existing.username);
-        setPublished(existing.isPublic);
-        return;
+    let cancelled = false;
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const editUsername = params.get("edit");
+      if (editUsername) {
+        const existing = await getProfile(editUsername);
+        if (existing && !cancelled) {
+          setProfile(existing);
+          setOriginalUsername(existing.username);
+          setPublished(existing.isPublic);
+          setLoaded(true);
+          return;
+        }
       }
-    }
-    const draft = window.localStorage.getItem(DRAFT_KEY);
-    if (draft) {
-      try {
-        setProfile(JSON.parse(draft));
-      } catch {
-        /* ignore corrupt draft */
+      const draft = window.localStorage.getItem(DRAFT_KEY);
+      if (draft && !cancelled) {
+        try {
+          setProfile(JSON.parse(draft));
+        } catch {
+          /* ignore corrupt draft */
+        }
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (!cancelled) setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Autosave draft (only for new, unpublished cards).
   useEffect(() => {
-    if (!originalUsername && !published) {
+    if (loaded && !originalUsername && !published) {
       window.localStorage.setItem(DRAFT_KEY, JSON.stringify(profile));
     }
-  }, [profile, originalUsername, published]);
+  }, [profile, originalUsername, published, loaded]);
 
   function patchProfile(patch: Partial<Profile>) {
     setProfile((prev) => ({ ...prev, ...patch }));
   }
 
-  const usernameValid = useMemo(() => {
-    if (usernameFormatError(profile.username)) return false;
-    return !isUsernameTaken(profile.username, originalUsername);
-  }, [profile.username, originalUsername]);
-
   const canGoNext = useMemo(() => {
-    if (step === 1) return profile.displayName.trim().length > 0 && profile.jobTitle.trim().length > 0;
-    if (step === 4) return usernameValid;
+    if (step === 1) {
+      return profile.displayName.trim().length > 0 && profile.jobTitle.trim().length > 0;
+    }
+    if (step === USERNAME_STEP) return usernameValid;
     return true;
   }, [step, profile, usernameValid]);
 
-  function handlePublish() {
-    const saved = saveProfile({ ...profile, isPublic: true });
-    setProfile(saved);
-    setOriginalUsername(saved.username);
-    setPublished(true);
-    window.localStorage.removeItem(DRAFT_KEY);
+  async function handlePublish() {
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      const formatError = usernameFormatError(profile.username);
+      if (formatError) throw new Error(formatError);
+      const taken = await isUsernameTaken(profile.username, originalUsername);
+      if (taken) throw new Error("That username was just taken — pick another one.");
+
+      const saved = await saveProfile({ ...profile, isPublic: true }, originalUsername);
+      setProfile(saved);
+      setOriginalUsername(saved.username);
+      setPublished(true);
+      window.localStorage.removeItem(DRAFT_KEY);
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+    } finally {
+      setPublishing(false);
+    }
   }
 
   return (
@@ -98,25 +122,35 @@ export default function CreatePage() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
           <div>
             {step === 1 && <StepDetails profile={profile} onChange={patchProfile} />}
-            {step === 2 && <StepTemplate profile={profile} onChange={patchProfile} />}
-            {step === 3 && <StepCustomize profile={profile} onChange={patchProfile} />}
-            {step === 4 && (
+            {step === 2 && <StepExtras profile={profile} onChange={patchProfile} />}
+            {step === 3 && <StepTemplate profile={profile} onChange={patchProfile} />}
+            {step === 4 && <StepCustomize profile={profile} onChange={patchProfile} />}
+            {step === USERNAME_STEP && (
               <StepUsername
                 profile={profile}
                 originalUsername={originalUsername}
                 onChange={patchProfile}
+                onValidityChange={setUsernameValid}
               />
             )}
-            {step === 5 && (
-              <StepPublish
-                profile={profile}
-                published={published}
-                canPublish={usernameValid}
-                onPublish={handlePublish}
-              />
+            {step === PUBLISH_STEP && (
+              <>
+                <StepPublish
+                  profile={profile}
+                  published={published}
+                  canPublish={usernameValid && !publishing}
+                  onPublish={handlePublish}
+                />
+                {publishing && (
+                  <p className="mt-4 text-center text-sm text-ink-soft">Publishing…</p>
+                )}
+                {publishError && (
+                  <p className="mt-4 text-center text-sm text-seal">{publishError}</p>
+                )}
+              </>
             )}
 
-            {step < 5 && (
+            {step < PUBLISH_STEP && (
               <div className="mt-10 flex items-center justify-between border-t border-black/10 pt-6">
                 <button
                   type="button"
@@ -136,11 +170,11 @@ export default function CreatePage() {
                 </button>
               </div>
             )}
-            {step === 5 && !published && (
+            {step === PUBLISH_STEP && !published && (
               <div className="mt-8 border-t border-black/10 pt-6">
                 <button
                   type="button"
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(USERNAME_STEP)}
                   className="focus-ring flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ink-soft hover:text-ink"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
@@ -149,7 +183,7 @@ export default function CreatePage() {
             )}
           </div>
 
-          {step !== 5 && (
+          {step !== PUBLISH_STEP && (
             <aside className="lg:sticky lg:top-10 lg:h-fit">
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">
                 Live preview
