@@ -22,7 +22,7 @@ export interface AnalyticsSummary {
  */
 export function trackEvent(username: string, type: AnalyticsEventType) {
   if (!API_URL || typeof window === "undefined" || !username) return;
-  const url = `${API_URL.replace(/\/$/, "")}/api/analytics/event`;
+  const url = `${API_URL.replace(/\/$/, "")}/api/events`;
   const body = JSON.stringify({ username, type });
   try {
     if (navigator.sendBeacon) {
@@ -47,7 +47,7 @@ export async function getAnalyticsSummary(
   if (!API_URL) return null;
   try {
     const res = await fetch(
-      `${API_URL.replace(/\/$/, "")}/api/analytics/${encodeURIComponent(username)}`,
+      `${API_URL.replace(/\/$/, "")}/api/stats/${encodeURIComponent(username)}`,
       { headers: { "X-Owner-Token": ownerToken } }
     );
     if (!res.ok) return null;

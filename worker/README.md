@@ -57,8 +57,8 @@ whenever this variable is set — nothing else in the app needs to change.
 | GET    | `/api/profile/:username`          | Owner token optional| Public cards to anyone; drafts need the token |
 | PUT    | `/api/profile/:username`          | `X-Owner-Token`     | Update (can also rename by sending a new `username`) |
 | DELETE | `/api/profile/:username`          | `X-Owner-Token`     | Delete the card and its analytics |
-| POST   | `/api/analytics/event`            | —                   | Fire-and-forget `{ username, type }` |
-| GET    | `/api/analytics/:username`        | `X-Owner-Token`     | Aggregate counts for that card    |
+| POST   | `/api/events`                     | —                   | Fire-and-forget `{ username, type }` |
+| GET    | `/api/stats/:username`            | `X-Owner-Token`     | Aggregate counts for that card    |
 
 ## Notes on this design
 

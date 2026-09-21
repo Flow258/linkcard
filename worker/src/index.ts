@@ -249,16 +249,11 @@ export default {
         if (request.method === "DELETE") return handleDeleteProfile(request, env, username);
       }
 
-      if (
-        parts[0] === "api" &&
-        parts[1] === "analytics" &&
-        parts[2] === "event" &&
-        request.method === "POST"
-      ) {
+      if (parts[0] === "api" && parts[1] === "events" && request.method === "POST") {
         return handleAnalyticsEvent(request, env);
       }
 
-      if (parts[0] === "api" && parts[1] === "analytics" && parts[2] && request.method === "GET") {
+      if (parts[0] === "api" && parts[1] === "stats" && parts[2] && request.method === "GET") {
         return handleAnalyticsSummary(request, env, decodeURIComponent(parts[2]));
       }
 
