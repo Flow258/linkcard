@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, ExternalLink, Pencil, Trash2, Eye, EyeOff, BarChart3 } from "lucide-react";
+import { Plus, ExternalLink, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { Profile } from "@/lib/types";
 import { listProfiles, deleteProfile, saveProfile, usingApiBackend } from "@/lib/data";
 import { getCardUrl } from "@/lib/utils";
@@ -135,12 +135,6 @@ export default function DashboardPage() {
                     className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> View
-                  </Link>
-                  <Link
-                    href={`/analytics/${p.username}`}
-                    className="focus-ring flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
-                  >
-                    <BarChart3 className="h-3.5 w-3.5" /> Analytics
                   </Link>
                   <button
                     onClick={() => handleDelete(p.username)}
