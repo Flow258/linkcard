@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Download, Share2, Check } from "lucide-react";
 import { Profile, CardColors } from "@/lib/types";
 import { downloadVCard } from "@/lib/vcard";
-import { trackEvent } from "@/lib/analytics";
 
 export default function ContactButtons({
   profile,
@@ -38,10 +37,7 @@ export default function ContactButtons({
   return (
     <div className="flex w-full gap-2.5">
       <button
-        onClick={() => {
-          trackEvent(profile.username, "contact_download");
-          downloadVCard(profile, cardUrl);
-        }}
+        onClick={() => downloadVCard(profile, cardUrl)}
         className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-transform hover:scale-[1.02]"
         style={{ backgroundColor: colors.accent, color: "#fff" }}
       >
