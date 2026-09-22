@@ -51,7 +51,7 @@ export default function PublicCardPage({ params }: { params: { username: string 
       className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 py-16"
       style={{ backgroundColor: profile.colors.background }}
     >
-      <ProfileCard profile={profile} showQr showActions trackViews />
+      <ProfileCard profile={profile} showQr showActions />
       <Link href="/" className="text-xs opacity-50 hover:opacity-80" style={{ color: profile.colors.text }}>
         Made with LinkCard
       </Link>
