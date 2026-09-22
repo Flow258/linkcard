@@ -19,23 +19,28 @@ export interface AnalyticsSummary {
  * Records one event and never throws — a failed analytics call should
  * never break the page for a visitor. No-ops entirely on the localStorage
  * backend, since there's nowhere durable to send it.
+ *
+ * Deliberately uses fetch(..., { keepalive: true }) instead of
+ * navigator.sendBeacon(). Beacon requests are flagged internally by most
+ * ad/tracker blockers (Brave Shields, uBlock Origin, NoScript, etc.) as
+ * resource type "ping" and silently dropped regardless of destination
+ * domain — sendBeacon() still returns true (looks queued) but the
+ * request never leaves the browser. keepalive fetch gives the same
+ * "survives page navigation" behavior without that blind spot.
  */
 export function trackEvent(username: string, type: AnalyticsEventType) {
   if (!API_URL || typeof window === "undefined" || !username) return;
   const url = `${API_URL.replace(/\/$/, "")}/api/events`;
   const body = JSON.stringify({ username, type });
   try {
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
-      if (sent) return;
-    }
-
     fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
       keepalive: true,
-    }).catch(() => {});
+    }).catch(() => {
+      /* analytics failures are never surfaced to the visitor */
+    });
   } catch {
     /* analytics failures are never surfaced to the visitor */
   }
