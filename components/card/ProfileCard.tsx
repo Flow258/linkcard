@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
 import { MapPin, Mail, Phone, MessageCircle, FileText, ExternalLink, Github } from "lucide-react";
 import { Profile } from "@/lib/types";
 import SocialLinks from "./SocialLinks";
 import ContactButtons from "./ContactButtons";
 import QRCode from "./QRCode";
 import { getCardUrl } from "@/lib/utils";
-import { trackEvent } from "@/lib/analytics";
 
 const FONT_CLASS: Record<string, string> = {
   body: "font-body",
@@ -54,13 +52,11 @@ export default function ProfileCard({
   profile,
   showActions = false,
   showQr = false,
-  trackViews = false,
   className = "",
 }: {
   profile: Profile;
   showActions?: boolean;
   showQr?: boolean;
-  trackViews?: boolean;
   className?: string;
 }) {
   const { colors, layout } = profile;
@@ -70,11 +66,6 @@ export default function ProfileCard({
   const skills = profile.skills ?? [];
   const projects = profile.projects ?? [];
   const services = profile.services ?? [];
-
-  useEffect(() => {
-    if (trackViews && profile.username) trackEvent(profile.username, "page_view");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackViews, profile.username]);
 
   const contactButtons: { label: string; href: string; icon: typeof Mail }[] = [];
   if (sections.contact && profile.email?.public && profile.email.value) {
@@ -137,7 +128,7 @@ export default function ProfileCard({
         {contactButtons.length > 0 && (
           <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
             {contactButtons.map((btn) => (
-              <a
+              
                 key={btn.label}
                 href={btn.href}
                 target={btn.href.startsWith("http") ? "_blank" : undefined}
@@ -188,7 +179,7 @@ export default function ProfileCard({
                   )}
                   <div className="mt-1.5 flex gap-3">
                     {project.url && (
-                      <a
+                      
                         href={project.url}
                         target="_blank"
                         rel="noreferrer noopener"
@@ -198,7 +189,7 @@ export default function ProfileCard({
                       </a>
                     )}
                     {project.githubUrl && (
-                      <a
+                      
                         href={project.githubUrl}
                         target="_blank"
                         rel="noreferrer noopener"
@@ -244,7 +235,7 @@ export default function ProfileCard({
         )}
 
         {profile.resumeUrl && (
-          <a
+          
             href={profile.resumeUrl}
             target="_blank"
             rel="noreferrer noopener"
